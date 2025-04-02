@@ -33,7 +33,7 @@ PortfolioPilot is an **investment strategy simulator** . It empowers users to **
 
 **1. Clone the repository:**
  
-   git clone https://github.com/Tanisha020/PortfolioPilot
+   git clone https://github.com/TakshayBansal/Portfolio-Pilot
    
 **2. Navigate to the project directory then to frontend and backend directory in splited terminals:**
   
