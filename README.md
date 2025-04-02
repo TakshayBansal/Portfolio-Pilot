@@ -89,16 +89,3 @@ NEON_PROJECT_ID = your project id
 
 
 VITE_URL=http://127.0.0.1:8000
-
-
-
-
-## 🎉 Credits
-
-- [Ashmika Verma](https://github.com/username)
-- [Tanisha Chawala](https://github.com/username)
-- [Ayanna Mondol](https://github.com/username)
-- [Ganta Devi Abhijna](https://github.com/username)
-
-## 📬 Mentor 
-Ankit Raj
