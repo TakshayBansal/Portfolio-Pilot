@@ -14,3 +14,4 @@ statsmodels
 pytest 
 uvicorn
 httpx
+yfinance==0.2.38

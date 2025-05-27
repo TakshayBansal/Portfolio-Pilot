@@ -1,10 +1,11 @@
 import pandas as pd
 import numpy as np
-from utils.data_loader import load_data
+import time # Added for timing
+from Backend.utils.data_loader import load_data, get_top_50_stock_tickers
 from models.portfolio_optimizer import optimize_stock_allocation, optimize_portfolio
 from models.monte_carlo import monte_carlo_simulation
 from models.gbm_model import geometric_brownian_motion
-from utils.data_loader import load_data
+
 def get_optimized_portfolio(investment, duration, user_allocation, risk_tolerance):
     
     """
@@ -33,10 +34,30 @@ def get_optimized_portfolio(investment, duration, user_allocation, risk_toleranc
     
         investment_breakdown = {asset: weight * investment for asset, weight in allocation.items()}
          
-      
-        stock_list = ["AAPL", "GOOGL", "MSFT", "TSLA", "NVDA"]
-        stock_data = {ticker: load_data(ticker) for ticker in stock_list}
-     
+        # Get the list of top 50 stock tickers
+        tickers = get_top_50_stock_tickers()
+        
+        print("Starting data fetch for top 50 stocks.") # Using print as logger not set up
+        start_time = time.time()
+        
+        # Load data for each stock ticker
+        stock_data = {}
+        for ticker in tickers:
+            try:
+                stock_data[ticker] = load_data(ticker)
+            except Exception as e:
+                print(f"⚠️ Warning: Could not load data for {ticker}: {e}")
+                # Optionally, decide if you want to skip this ticker or raise an error
+                # For now, we'll skip it and the optimizer will work with fewer stocks
+                continue # Skip to the next ticker if data loading fails
+        
+        duration_fetch = time.time() - start_time
+        print(f"Finished data fetch for {len(stock_data)} out of {len(tickers)} stocks in {duration_fetch:.2f} seconds.")
+
+        if not stock_data: # Check if stock_data is empty
+             return {"error": "Could not load data for any stock tickers. Portfolio optimization aborted."}
+
+
         stock_investment = investment_breakdown.get("Stocks", 0)
 
         
@@ -54,9 +75,13 @@ def get_optimized_portfolio(investment, duration, user_allocation, risk_toleranc
         sharpe_ratio = (expected_return - risk_free_rate / 100) / volatility if volatility > 0 else 0
         diversification_score = 1 / np.sum(np.square(optimized_weights)) if np.sum(np.square(optimized_weights)) != 0 else 0
 
+        print("Starting stock allocation optimization.") # Using print
+        opt_start_time = time.time()
         
         optimized_stock_allocation = optimize_stock_allocation(stock_data, risk_tolerance,duration)
-
+        
+        opt_duration = time.time() - opt_start_time
+        print(f"Finished stock allocation optimization in {opt_duration:.2f} seconds.")
        
         if "error" in optimized_stock_allocation:
             return {"error": "Stock allocation optimization failed."}

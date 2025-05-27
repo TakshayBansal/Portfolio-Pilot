@@ -3,8 +3,9 @@ import pandas as pd
 from models.monte_carlo import monte_carlo_simulation
 from models.gbm_model import geometric_brownian_motion
 from utils.data_loader import load_data
+from Backend.utils.market_trend import get_market_trend
 
-def run_risk_assessment(investment_amount, duration, risk_appetite, market_condition, stocks, bonds, real_estate, commodities):
+def run_risk_assessment(investment_amount, duration, risk_appetite, stocks, bonds, real_estate, commodities):
     asset_classes = {
         "stocks": stocks,
         "bonds": bonds,
@@ -27,6 +28,9 @@ def run_risk_assessment(investment_amount, duration, risk_appetite, market_condi
     if num_assets == 0:
         return {"error": "At least one asset must have an allocation greater than 0."}
 
+    market_trend_actual = get_market_trend()
+    print(f"ℹ️ Determined Market Trend: {market_trend_actual}")
+
     for asset, allocation in asset_classes.items():
         if allocation == 0:
             continue
@@ -39,12 +43,14 @@ def run_risk_assessment(investment_amount, duration, risk_appetite, market_condi
         drawdown = (data['Close'] / cumulative_max) - 1  # Drop from peak at each point
         max_drawdown = drawdown.min()  # Worst drop from any peak
 
-
-        # Adjust return based on market condition
-        if market_condition == "bull":
-            mean_return *= 1.2  # 20% boost in bull market
-        elif market_condition == "bear":
-            mean_return *= 0.8  # 20% drop in bear market
+        # Adjust return based on automatically determined market trend
+        adjustment_factor = 1.0 # Default for neutral or if trend is unclear
+        if market_trend_actual == "bull":
+            adjustment_factor = 1.1 # 10% boost for bull
+        elif market_trend_actual == "bear":
+            adjustment_factor = 0.9 # 10% reduction for bear
+        
+        mean_return *= adjustment_factor
         
         # Adjust risk based on risk appetite
         volatility *= (1 + risk_appetite)
@@ -85,10 +91,11 @@ def run_risk_assessment(investment_amount, duration, risk_appetite, market_condi
 
     # Compute Risk Score (0-10)
     risk_score = 5 + (avg_volatility * 10) - (avg_max_drawdown * 5)
-    if market_condition == "bull":
+    if market_trend_actual == "bull":
         risk_score -= 0.5
-    elif market_condition == "bear":
+    elif market_trend_actual == "bear":
         risk_score += 0.5
+    # No change if "neutral"
     risk_score = max(0, min(10, risk_score))  # Ensure within 0-10
 
     return {
