@@ -1,35 +1,68 @@
 import pandas as pd
 import numpy as np
+<<<<<<< Updated upstream
 from utils.data_loader import load_data
 from models.portfolio_optimizer import optimize_stock_allocation, optimize_portfolio
 from models.monte_carlo import monte_carlo_simulation
 from models.gbm_model import geometric_brownian_motion
 from utils.data_loader import load_data
+=======
+import time     # Timing
+import math     # isnan, isinf
+
+from utils.data_loader import load_data, get_top_50_stock_tickers
+from models.portfolio_optimizer import optimize_stock_allocation, optimize_portfolio
+
+# Helper to replace inf/nan with None for JSON
+def sanitize_value(value):
+    if isinstance(value, (float, np.floating)):
+        if math.isinf(value) or math.isnan(value):
+            return None
+    elif isinstance(value, list):
+        return [sanitize_value(v) for v in value]
+    elif isinstance(value, dict):
+        return {k: sanitize_value(v) for k, v in value.items()}
+    return value
+
+>>>>>>> Stashed changes
 def get_optimized_portfolio(investment, duration, user_allocation, risk_tolerance):
-    
     """
-    Loads historical data and runs portfolio optimization based on user inputs.
-    Also optimizes stock allocation within the 'Stocks' category.
+    Returns a dict containing:
+      - optimized_allocation: high-level weights for Stocks, Bonds, Real_Estate, Commodities
+      - investment_breakdown: actual rupee allocation per asset
+      - optimized_stock_allocation: breakdown within the Stocks bucket
+      - stock_allocation_investment: rupee allocation per individual stock
+      - portfolio_metrics: Expected Return %, Volatility %, Sharpe Ratio
+      - insights: list of recommendation dicts {title, content}
     """
     try:
-       
+        # 1) Load market data
         stock_data = load_data("stocks")
         bond_data = load_data("bonds")
         real_estate_data = load_data("real_estate")
         commodity_data = load_data("commodities")
 
         data = pd.concat([
-            stock_data['Close'],
-            bond_data['Close'],
-            real_estate_data['Close'],
-            commodity_data['Close']
+            stock_data["Close"],
+            bond_data["Close"],
+            real_estate_data["Close"],
+            commodity_data["Close"],
         ], axis=1)
+        data.columns = ["Stocks", "Bonds", "Real_Estate", "Commodities"]
 
-        data.columns = ['Stocks', 'Bonds', 'Real_Estate', 'Commodities']
-
+        # 2) High-level allocation
         optimized_weights = optimize_portfolio(data, user_allocation, risk_tolerance)
-        allocation = {asset: round(weight, 2) for asset, weight in zip(data.columns, optimized_weights)}
+        weights = np.array(optimized_weights)              # ← convert list→array
+        allocation = {
+            asset: round(w, 4)
+            for asset, w in zip(data.columns, weights)
+        }
+        investment_breakdown = {
+            asset: round(w * investment, 2)
+            for asset, w in allocation.items()
+        }
 
+<<<<<<< Updated upstream
     
         investment_breakdown = {asset: weight * investment for asset, weight in allocation.items()}
          
@@ -42,72 +75,95 @@ def get_optimized_portfolio(investment, duration, user_allocation, risk_toleranc
         
        
         
+=======
+        # 3) Fetch top-50 stock histories
+        tickers = get_top_50_stock_tickers()
+        stock_data_dict = {}
+        start = time.time()
+        for t in tickers:
+            try:
+                stock_data_dict[t] = load_data(t)
+            except Exception as e:
+                print(f"⚠️ Skipped {t}: {e}")
+        print(f"Loaded {len(stock_data_dict)}/{len(tickers)} in {time.time()-start:.1f}s")
+
+        if not stock_data_dict:
+            return {"error": "No individual stock data available."}
+
+        # 4) Portfolio metrics
+>>>>>>> Stashed changes
         returns = data.pct_change().dropna()
-
+        # If percentages >1, assume they were in basis points
         if returns.max().max() > 1:
-            returns = returns / 100  
-        risk_free_rate = 5  
-        expected_return = np.dot(returns.mean(), optimized_weights) *252*  100  # Convert to %
-        cov_matrix = returns.cov()
-        volatility = np.sqrt(np.dot(optimized_weights.T, np.dot(cov_matrix, optimized_weights))) * np.sqrt(252) * 100
+            returns /= 100
 
-        sharpe_ratio = (expected_return - risk_free_rate / 100) / volatility if volatility > 0 else 0
-        diversification_score = 1 / np.sum(np.square(optimized_weights)) if np.sum(np.square(optimized_weights)) != 0 else 0
+        annual_factor = 252
+        rf_rate = 0.05  # 5%
 
+<<<<<<< Updated upstream
         
         optimized_stock_allocation = optimize_stock_allocation(stock_data, risk_tolerance,duration)
 
        
         if "error" in optimized_stock_allocation:
             return {"error": "Stock allocation optimization failed."}
+=======
+        mean_returns = returns.mean().values
+        cov = returns.cov().values
+>>>>>>> Stashed changes
 
-        
-        stock_allocation_investment = {
-            stock: round((weight / 100) * stock_investment, 2)
-            for stock, weight in optimized_stock_allocation.items()
+        expected_return = float(np.dot(mean_returns, weights) * annual_factor * 100)
+        volatility = float(np.sqrt(weights @ cov @ weights.T) * np.sqrt(annual_factor) * 100)
+        sharpe = ((expected_return - rf_rate * 100) / volatility) if volatility > 0 else 0.0
+
+        # 5) Stock-level optimization
+        opt_start = time.time()
+        stock_alloc = optimize_stock_allocation(stock_data_dict, risk_tolerance, duration)
+        print(f"Stock optimize took {time.time()-opt_start:.1f}s")
+
+        if "error" in stock_alloc:
+            return {"error": "Error in stock-level optimization."}
+
+        stock_bucket_amt = investment_breakdown["Stocks"]
+        stock_alloc_invest = {
+            t: round((w / 100) * stock_bucket_amt, 2)
+            for t, w in stock_alloc.items()
         }
-        suggestions = []
 
+        # 6) Build insights
+        insights = []
         if expected_return < 7:
-            suggestions.append({
+            insights.append({
                 "title": "Boost Expected Returns",
-                "content": "Your portfolio's expected return is below market average (~7-10%). Adjust allocations for better growth potential."
+                "content": "Your expected return (<7%) is below market average. Consider heavier equities or higher-growth sectors."
             })
-
         if volatility > 25:
-            suggestions.append({
+            insights.append({
                 "title": "Reduce Portfolio Risk",
-                "content": "Your portfolio has high volatility (>25%). Consider adding bonds or defensive stocks to stabilize performance."
+                "content": "Volatility is high (>25%). Increase bond or defensive allocations to smooth returns."
             })
-
-        if sharpe_ratio < 1:
-            suggestions.append({
+        if sharpe < 1:
+            insights.append({
                 "title": "Improve Risk-Adjusted Returns",
-                "content": "Your Sharpe Ratio is below 1, indicating low return for risk taken. Consider adjusting asset allocation to improve efficiency."
+                "content": "Sharpe Ratio <1 indicates low reward per unit risk. Consider rebalancing towards assets with better risk/reward."
             })
 
-        if diversification_score < 0.05:
-            suggestions.append({
-                "title": "Increase Diversification",
-                "content": "Your portfolio is heavily concentrated in a few assets. Consider reallocating to improve risk-adjusted returns."
-            })
-
-        return {
-            "optimized_allocation": allocation,
-            "investment_breakdown": investment_breakdown,
-            "optimized_stock_allocation": optimized_stock_allocation,
-            "stock_allocation_investment": stock_allocation_investment,
+        # 7) Sanitize and round
+        result = {
+            "optimized_allocation": sanitize_value(allocation),
+            "investment_breakdown": sanitize_value(investment_breakdown),
+            "optimized_stock_allocation": sanitize_value(stock_alloc),
+            "stock_allocation_investment": sanitize_value(stock_alloc_invest),
             "portfolio_metrics": {
-                "Expected Return (%)": round(expected_return, 2),
-                "Risk (Volatility %)": round(volatility, 2),
-                "Sharpe Ratio": round(sharpe_ratio, 2),
-                # "Diversification Score": round(diversification_score, 2)
+                "Expected Return (%)": round(sanitize_value(expected_return), 2),
+                "Volatility (%)": round(sanitize_value(volatility), 2),
+                "Sharpe Ratio": round(sanitize_value(sharpe), 2),
             },
-            "insights": suggestions
+            "insights": insights
         }
 
-    
+        return result
 
     except Exception as e:
         print(f"Error during portfolio optimization: {e}")
-        return {"error": "Failed to optimize portfolio. Please check the input data and try again."}
+        return {"error": "Portfolio optimization failed."}

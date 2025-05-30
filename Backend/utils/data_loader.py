@@ -29,6 +29,7 @@ def load_data(asset_type):
         if not os.path.exists(stock_file):
             raise FileNotFoundError(f"❌ Stock data file not found: {stock_file}")
 
+<<<<<<< Updated upstream
         
         df = pd.read_csv(stock_file)
 
@@ -42,6 +43,33 @@ def load_data(asset_type):
             raise ValueError(f"❌ No data found for stock: {asset_type}")
 
         return stock_data.reset_index(drop=True)
+=======
+    # Handle "stocks" asset type specifically for ^GSPC data
+    elif asset_type == "stocks":
+        ticker_symbol = "^GSPC" # Use ^GSPC as the general stock market representation
+        print(f"ℹ️ Asset type 'stocks' requested, fetching data for {ticker_symbol}")
+        # Check cache first for ^GSPC
+        if ticker_symbol in stock_data_cache:
+            cached_data, fetch_date = stock_data_cache[ticker_symbol]
+            if fetch_date == datetime.today().date():
+                print(f"✅ Using cached data for {ticker_symbol} (representing 'stocks')")
+                return cached_data.copy()
+        
+        # If not in cache or stale, fetch ^GSPC from yfinance
+        print(f"⬇️ Fetching data for {ticker_symbol} (representing 'stocks') from yfinance...")
+        try:
+            ticker_obj = yf.Ticker(ticker_symbol)
+            data = ticker_obj.history(period="5y")
+            if data.empty:
+                raise ValueError(f"❌ No data found for {ticker_symbol} (representing 'stocks').")
+            if 'Close' not in data.columns:
+                raise ValueError(f"❌ 'Close' price not available for {ticker_symbol} (representing 'stocks')")
+            data['Ticker'] = ticker_symbol # Add Ticker column for consistency, though it's ^GSPC
+            stock_data_cache[ticker_symbol] = (data.copy(), datetime.today().date())
+            return data
+        except Exception as e:
+            raise ValueError(f"❌ Error fetching data for {ticker_symbol} (representing 'stocks') from yfinance: {e}")
+>>>>>>> Stashed changes
 
     else:
         raise ValueError(f"❌ Invalid asset type: {asset_type}")

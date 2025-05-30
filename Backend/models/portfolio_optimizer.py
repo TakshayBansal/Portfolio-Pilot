@@ -2,8 +2,18 @@ import pandas as pd
 import numpy as np
 import scipy.optimize as sco  
 from scipy.optimize import minimize
+import math # Added for isnan, isinf
 
-
+# Helper function to sanitize values for JSON compatibility
+def sanitize_value(value):
+    if isinstance(value, (float, np.floating)): # Handle both Python floats and numpy floats
+        if math.isinf(value) or math.isnan(value):
+            return None  # Replace inf/nan with None (will become null in JSON)
+    elif isinstance(value, list) or isinstance(value, np.ndarray): # Handle lists and numpy arrays
+        return [sanitize_value(item) for item in value]
+    elif isinstance(value, dict): # If the value is a dict, sanitize each value
+        return {k: sanitize_value(v) for k, v in value.items()}
+    return value
 
 def optimize_stock_allocation(stock_data, risk_tolerance, duration):
     """
@@ -59,10 +69,27 @@ def optimize_stock_allocation(stock_data, risk_tolerance, duration):
 
       
         optimized_weights = best_weights / np.sum(best_weights)
+<<<<<<< Updated upstream
         return {stock: round(weight * 100, 2) for stock, weight in zip(stock_data.keys(), optimized_weights)}
 
     except Exception as e:
         print(f"Error optimizing stock allocation: {e}")
+=======
+        # Sanitize each weight individually
+        sanitized_weights = [sanitize_value(w) for w in optimized_weights]
+        
+        result_allocation = {
+            stock: round(weight * 100, 2) if weight is not None else None 
+            for stock, weight in zip(stock_data.keys(), sanitized_weights)
+        }
+        print(f"Optimization attempt completed for {num_stocks} stocks.") # Using print
+        return result_allocation
+
+    except Exception as e:
+        print(f"Error optimizing stock allocation for {len(stock_data)} stocks: {e}")
+        print(f"Optimization attempt completed for {len(stock_data)} stocks with error.") # Using print
+        # Error dictionary is inherently JSON compliant with string values
+>>>>>>> Stashed changes
         return {"error": "Stock allocation optimization failed."}
 
 
@@ -107,4 +134,8 @@ def optimize_portfolio(price_data, user_allocation, risk_tolerance):
 
     optimized_weights = result.x / np.sum(result.x)  
     
-    return optimized_weights * 100 
+    # Sanitize each weight individually before scaling
+    sanitized_weights_list = [sanitize_value(w) for w in optimized_weights]
+    
+    # Return a list of scaled weights (or None for sanitized items)
+    return [w * 100 if w is not None else None for w in sanitized_weights_list]
