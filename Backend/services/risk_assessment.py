@@ -4,8 +4,6 @@ import math # Added for isnan, isinf
 from models.monte_carlo import monte_carlo_simulation
 from models.gbm_model import geometric_brownian_motion
 from utils.data_loader import load_data
-<<<<<<< Updated upstream
-=======
 from utils.market_trend import get_market_trend
 
 # Define sanity cap thresholds at module level
@@ -30,9 +28,8 @@ def sanitize_value(value):
     # elif isinstance(value, dict): 
     #     return {k: sanitize_value(v) for k, v in value.items()}
     return value
->>>>>>> Stashed changes
 
-def run_risk_assessment(investment_amount, duration, risk_appetite, market_condition, stocks, bonds, real_estate, commodities):
+def run_risk_assessment(investment_amount, duration, risk_appetite, stocks, bonds, real_estate, commodities):
     asset_classes = {
         "stocks": stocks,
         "bonds": bonds,
@@ -55,6 +52,9 @@ def run_risk_assessment(investment_amount, duration, risk_appetite, market_condi
     if num_assets == 0:
         return {"error": "At least one asset must have an allocation greater than 0."}
 
+    market_trend_actual = get_market_trend()
+    print(f"ℹ️ Determined Market Trend: {market_trend_actual}")
+
     for asset, allocation in asset_classes.items():
         if allocation == 0:
             continue
@@ -67,14 +67,6 @@ def run_risk_assessment(investment_amount, duration, risk_appetite, market_condi
         drawdown = (data['Close'] / cumulative_max) - 1  # Drop from peak at each point
         max_drawdown = drawdown.min()  # Worst drop from any peak
 
-<<<<<<< Updated upstream
-
-        # Adjust return based on market condition
-        if market_condition == "bull":
-            mean_return *= 1.2  # 20% boost in bull market
-        elif market_condition == "bear":
-            mean_return *= 0.8  # 20% drop in bear market
-=======
         print(f"--- DIAGNOSTIC --- Asset: {asset}, Allocation: {allocation}%")
         print(f"--- DIAGNOSTIC --- Num Returns Points: {len(returns)}")
         print(f"--- DIAGNOSTIC --- Calculated Daily Mean Return: {mean_return}")
@@ -98,7 +90,6 @@ def run_risk_assessment(investment_amount, duration, risk_appetite, market_condi
             adjustment_factor = 0.9 # 10% reduction for bear
         
         mean_return *= adjustment_factor
->>>>>>> Stashed changes
         
         # Adjust risk based on risk appetite
         volatility *= (1 + risk_appetite / 100.0)
@@ -160,14 +151,6 @@ def run_risk_assessment(investment_amount, duration, risk_appetite, market_condi
     sharpe_ratio = final_avg_return / avg_volatility if avg_volatility > 0 else 0
 
     # Compute Risk Score (0-10)
-<<<<<<< Updated upstream
-    risk_score = 5 + (avg_volatility * 10) - (avg_max_drawdown * 5)
-    if market_condition == "bull":
-        risk_score -= 0.5
-    elif market_condition == "bear":
-        risk_score += 0.5
-    risk_score = max(0, min(10, risk_score))  # Ensure within 0-10
-=======
     # Example: assume volatility and drawdown are normalized between 0 and 1
     normalized_volatility = avg_volatility / 0.8  # assuming max expected = 0.8
     normalized_drawdown = avg_max_drawdown / 0.5  # assuming max expected = 0.5
@@ -204,7 +187,6 @@ def run_risk_assessment(investment_amount, duration, risk_appetite, market_condi
     print("ROI (%)",round(final_avg_return_sanitized * 100, 2) if final_avg_return_sanitized is not None else None)
     print("Max Drawdown (%)", round(avg_max_drawdown_sanitized * 100, 2) if avg_max_drawdown_sanitized is not None else None)
     print("Volatility Score", round(avg_volatility_sanitized * 100, 2) if avg_volatility_sanitized is not None else None)
->>>>>>> Stashed changes
 
     return {
         "Total Profit": round(final_total_value_sanitized, 2) if final_total_value_sanitized is not None else None,

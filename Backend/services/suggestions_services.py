@@ -1,12 +1,5 @@
 import pandas as pd
 import numpy as np
-<<<<<<< Updated upstream
-from utils.data_loader import load_data
-from models.portfolio_optimizer import optimize_stock_allocation, optimize_portfolio
-from models.monte_carlo import monte_carlo_simulation
-from models.gbm_model import geometric_brownian_motion
-from utils.data_loader import load_data
-=======
 import time     # Timing
 import math     # isnan, isinf
 
@@ -24,7 +17,6 @@ def sanitize_value(value):
         return {k: sanitize_value(v) for k, v in value.items()}
     return value
 
->>>>>>> Stashed changes
 def get_optimized_portfolio(investment, duration, user_allocation, risk_tolerance):
     """
     Returns a dict containing:
@@ -62,20 +54,6 @@ def get_optimized_portfolio(investment, duration, user_allocation, risk_toleranc
             for asset, w in allocation.items()
         }
 
-<<<<<<< Updated upstream
-    
-        investment_breakdown = {asset: weight * investment for asset, weight in allocation.items()}
-         
-      
-        stock_list = ["AAPL", "GOOGL", "MSFT", "TSLA", "NVDA"]
-        stock_data = {ticker: load_data(ticker) for ticker in stock_list}
-     
-        stock_investment = investment_breakdown.get("Stocks", 0)
-
-        
-       
-        
-=======
         # 3) Fetch top-50 stock histories
         tickers = get_top_50_stock_tickers()
         stock_data_dict = {}
@@ -91,7 +69,6 @@ def get_optimized_portfolio(investment, duration, user_allocation, risk_toleranc
             return {"error": "No individual stock data available."}
 
         # 4) Portfolio metrics
->>>>>>> Stashed changes
         returns = data.pct_change().dropna()
         # If percentages >1, assume they were in basis points
         if returns.max().max() > 1:
@@ -100,17 +77,8 @@ def get_optimized_portfolio(investment, duration, user_allocation, risk_toleranc
         annual_factor = 252
         rf_rate = 0.05  # 5%
 
-<<<<<<< Updated upstream
-        
-        optimized_stock_allocation = optimize_stock_allocation(stock_data, risk_tolerance,duration)
-
-       
-        if "error" in optimized_stock_allocation:
-            return {"error": "Stock allocation optimization failed."}
-=======
         mean_returns = returns.mean().values
         cov = returns.cov().values
->>>>>>> Stashed changes
 
         expected_return = float(np.dot(mean_returns, weights) * annual_factor * 100)
         volatility = float(np.sqrt(weights @ cov @ weights.T) * np.sqrt(annual_factor) * 100)

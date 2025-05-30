@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-=======
 import unittest
 from unittest.mock import patch, MagicMock, call
 import pandas as pd
@@ -306,4 +304,3 @@ if __name__ == '__main__':
         self.assertIsNotNone(result4["portfolio_metrics"]["Expected Return (%)"]) # Should be a number
         self.assertEqual(result4["portfolio_metrics"]["Risk (Volatility %)"], 0.0) # Zero volatility
         self.assertIsNone(result4["portfolio_metrics"]["Sharpe Ratio"]) # Sharpe should be None
->>>>>>> Stashed changes

@@ -20,6 +20,7 @@ def optimize_stock_allocation(stock_data, risk_tolerance, duration):
     Optimizes stock allocation within the 'Stocks' category using Modern Portfolio Theory (MPT),
     factoring in risk tolerance and investment duration.
     """
+    print(f"Starting optimize_stock_allocation for {len(stock_data)} stocks.") # Using print
     try:
        
         prices = pd.DataFrame({ticker: data['Close'] for ticker, data in stock_data.items()})
@@ -48,14 +49,17 @@ def optimize_stock_allocation(stock_data, risk_tolerance, duration):
       
         constraints = {'type': 'eq', 'fun': lambda x: np.sum(x) - 1}
 
-        bounds = tuple((0.05, 1) for _ in range(num_stocks))
+        # Allow stocks to have zero allocation, especially with a larger number of stocks
+        bounds = tuple((0.0, 1.0) for _ in range(num_stocks))
 
         
         best_result = None
         best_weights = None
         best_value = float("inf")
 
-        for _ in range(1000):  
+        # Reduced iterations from 1000 to 100 for performance with more assets.
+        # This may slightly reduce the chance of finding the absolute global optimum.
+        for _ in range(100):  
             initial_weights = np.random.dirichlet(np.ones(num_stocks), size=1)[0]  
             result = sco.minimize(objective_function, initial_weights, method='SLSQP', bounds=bounds, constraints=constraints)
 
@@ -69,12 +73,6 @@ def optimize_stock_allocation(stock_data, risk_tolerance, duration):
 
       
         optimized_weights = best_weights / np.sum(best_weights)
-<<<<<<< Updated upstream
-        return {stock: round(weight * 100, 2) for stock, weight in zip(stock_data.keys(), optimized_weights)}
-
-    except Exception as e:
-        print(f"Error optimizing stock allocation: {e}")
-=======
         # Sanitize each weight individually
         sanitized_weights = [sanitize_value(w) for w in optimized_weights]
         
@@ -89,7 +87,6 @@ def optimize_stock_allocation(stock_data, risk_tolerance, duration):
         print(f"Error optimizing stock allocation for {len(stock_data)} stocks: {e}")
         print(f"Optimization attempt completed for {len(stock_data)} stocks with error.") # Using print
         # Error dictionary is inherently JSON compliant with string values
->>>>>>> Stashed changes
         return {"error": "Stock allocation optimization failed."}
 
 

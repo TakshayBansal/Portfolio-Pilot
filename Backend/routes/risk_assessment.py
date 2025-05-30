@@ -10,7 +10,7 @@ class RiskAssessmentInput(BaseModel):
     investment_amount: float
     duration: int
     risk_appetite: float
-    market_condition: str
+    # market_condition: str # Removed as it will be determined automatically
     stocks: float
     bonds: float
     real_estate: float
@@ -24,7 +24,7 @@ async def risk_assessment(data: RiskAssessmentInput):
             investment_amount=data.investment_amount,
             duration=data.duration,
             risk_appetite=data.risk_appetite,
-            market_condition=data.market_condition,
+            # market_condition=data.market_condition, # Removed
             stocks=data.stocks,
             bonds=data.bonds,
             real_estate=data.real_estate,
