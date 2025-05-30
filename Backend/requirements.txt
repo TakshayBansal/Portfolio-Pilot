@@ -13,9 +13,5 @@ pandas
 statsmodels 
 pytest 
 uvicorn
-<<<<<<< Updated upstream
-httpx
-=======
 httpx
 yfinance
->>>>>>> Stashed changes
